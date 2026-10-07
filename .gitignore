@@ -1,0 +1,14 @@
+# Esiti delle compilazioni
+build-log.txt
+rust-log.txt
+build/
+dist/
+DerivedData/
+target/
+
+# Stato di Xcode personale
+xcuserdata/
+*.xcuserstate
+
+# macOS
+.DS_Store
