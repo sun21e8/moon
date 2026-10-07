@@ -26,9 +26,31 @@ STATUS=$?
 echo "=== ESITO: $STATUS ===" >> "$LOG"
 
 if [ $STATUS -eq 0 ]; then
-  echo "Fatto. Apro l'app."
+  BUILT="$BUILD/Build/Products/Debug/Moon.app"
   pkill -x Moon 2>/dev/null && sleep 1
-  open "$BUILD/Build/Products/Debug/Moon.app"
+
+  # Mette l'app in Applicazioni, così si apre da Launchpad, Spotlight o dal Dock come tutte le altre.
+  DEST="/Applications"
+  [ -w "$DEST" ] || DEST="$HOME/Applications"
+  mkdir -p "$DEST"
+  INSTALLED="$DEST/Moon.app"
+
+  # Sostituisce solo una copia precedente di questa stessa app, mai un'altra app che si chiami Moon.
+  OWNER=""
+  if [ -d "$INSTALLED" ]; then
+    OWNER=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$INSTALLED/Contents/Info.plist" 2>/dev/null)
+  fi
+
+  if [ -d "$INSTALLED" ] && [ "$OWNER" != "local.moon.Moon" ]; then
+    echo "In $DEST c'è già un'altra app chiamata Moon: non la tocco e apro quella appena compilata." | tee -a "$LOG"
+    open "$BUILT"
+  elif rm -rf "$INSTALLED" && ditto "$BUILT" "$INSTALLED"; then
+    echo "Fatto. Moon è installata in $DEST." | tee -a "$LOG"
+    open "$INSTALLED"
+  else
+    echo "Non sono riuscita a copiarla in $DEST: apro quella appena compilata." | tee -a "$LOG"
+    open "$BUILT"
+  fi
 else
   echo "La compilazione non è riuscita. Dillo a Claude: gli errori sono in build-log.txt."
 fi
